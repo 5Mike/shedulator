@@ -1,9 +1,11 @@
 CREATE SCHEMA sh_f_users AUTHORIZATION postgres;
 
 CREATE OR REPLACE FUNCTION sh_f_users.users_create(
-    user_name_Pc    varchar  DEFAULT NULL::varchar,
-    company_id_Pi   integer DEFAULT NULL::integer,
-    phone_num_Pc    varchar DEFAULT NULL::varchar)
+    user_name_Pc    varchar  DEFAULT NULL::varchar
+    ,company_id_Pi  integer DEFAULT NULL::integer
+    ,phone_num_Pc   varchar DEFAULT NULL::varchar
+    ,result_Pi      out integer
+    )
   RETURNS integer AS
 $BODY$DECLARE
   count_recs_Vi  integer := 0;
@@ -23,7 +25,9 @@ BEGIN
   from companies c
   where c.id = company_id_Pi;
   
-  if count_recs_Vi <> 1 then return 4; -- некорректное количество компаний найдено
+  if count_recs_Vi <> 1 then 
+    result_Pi := 4; -- некорректное количество компаний найдено
+    return;
   end if;
 
   select count(*)
@@ -32,14 +36,14 @@ BEGIN
   where u.company_id = company_id
   and u.name = search_index_Vc;
 
-  if count_recs_Vi > 0 then return 5; -- такой пользователь уже существует
+  if count_recs_Vi > 0 then 
+    result_Pi := 5; -- такой пользователь уже существует
+    return;
   end if;
 
   insert into users (name,company_id,phone_num) values (user_name_Pc,company_id_Pi,phone_num_Pc);
 
-  return 0; -- успех, пользователь создан
-  exception
-  when others then return 1;
+  result_Pi := 0;
 END;$BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
